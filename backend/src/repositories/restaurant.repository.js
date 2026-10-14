@@ -42,3 +42,22 @@ export async function getRestaurantById(id){
   return rows[0];
 }
 
+export async function getRestaurantMenu(id) {
+  const [rows] = await db.query(
+    `SELECT
+       id,
+       restaurante_id,
+       nombre,
+       descripcion,
+       precio,
+       imagen_url
+     FROM platos
+     WHERE restaurante_id = ?
+       AND activo = TRUE
+     ORDER BY nombre ASC`,
+    [id]
+  );
+
+  return rows;
+}
+
