@@ -32,4 +32,3 @@ export function generateRegistrationToken(googleUser) {
 
   return token;
 }
-

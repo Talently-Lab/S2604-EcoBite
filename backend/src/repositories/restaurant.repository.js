@@ -51,7 +51,7 @@ export async function getRestaurantMenu(id) {
        descripcion,
        precio,
        imagen_url
-     FROM platos
+     FROM productos
      WHERE restaurante_id = ?
        AND activo = TRUE
      ORDER BY nombre ASC`,
@@ -60,4 +60,3 @@ export async function getRestaurantMenu(id) {
 
   return rows;
 }
-

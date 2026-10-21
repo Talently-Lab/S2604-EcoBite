@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./src/routes/auth.routes.js"
 import { requireAuth } from "./src/middleware/requireAuth.js";
 import restaurantRoutes from "./src/routes/restaurant.routes.js";
+import productRoutes from "./src/routes/product.routes.js";
+
 
 dotenv.config()
 
@@ -21,6 +23,7 @@ app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 app.use("/restaurants", restaurantRoutes);
+app.use("/products", productRoutes);
 
 app.get("/", (req, res) =>{
   res.json({
@@ -32,4 +35,3 @@ app.get("/", (req, res) =>{
 app.listen(PORT, ()=>{
   console.log(`Server running on http://localhost:${PORT}`);
 })
-
