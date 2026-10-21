@@ -1,14 +1,18 @@
 node_modules/
+**/node_modules/
 
 .env
 .env.*
 !.env.example
 
 .next/
+**/.next/
 out/
 
 dist/
 build/
+coverage/
+*.tsbuildinfo
 
 *.log
 npm-debug.log*
@@ -17,16 +21,11 @@ pnpm-debug.log*
 
 .cache/
 .turbo/
-
-.DS_Store
-Thumbs.db
+.vercel/
 
 .vscode/
 .idea/
 .nvim/
 
-*.tsbuildinfo
-
-coverage/
-
-.vercel/
+.DS_Store
+Thumbs.db
