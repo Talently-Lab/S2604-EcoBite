@@ -27,7 +27,7 @@ app.use("/products", productRoutes);
 
 app.get("/", (req, res) =>{
   res.json({
-    message: "API FUNCIONANDO",
+    message: "Ecobite V1 API",
     user: req.user
   })
 })
