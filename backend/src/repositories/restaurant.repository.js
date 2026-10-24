@@ -32,7 +32,7 @@ export async function createRestaurant({
 
 export async function getRestaurants(){
   const [rows] = await db.query(
-    `SELECT * FROM restaurantes WHERE activo = 1`
+    ` select r.id, r.nombre, r.urlImagen, r.cocina, r.badgesSustentabilidad, r.badgesAhorro, r.tipoEnvase, r.puntuacion, h.dias,h.apertura,h.cierre from restaurantes r inner join horariorestaurante h on r.id = h.id_restaurante`
   );
   return rows;
 }
