@@ -6,7 +6,7 @@ import authRoutes from "./src/routes/auth.routes.js"
 import { requireAuth } from "./src/middleware/requireAuth.js";
 import restaurantRoutes from "./src/routes/restaurant.routes.js";
 import productRoutes from "./src/routes/product.routes.js";
-
+import orderRoutes from "./src/routes/order.routes.js";
 
 dotenv.config()
 
@@ -24,6 +24,7 @@ app.use(cookieParser());
 app.use("/auth", authRoutes);
 app.use("/restaurants", restaurantRoutes);
 app.use("/products", productRoutes);
+app.use("/orders", orderRoutes);
 
 app.get("/", (req, res) =>{
   res.json({
