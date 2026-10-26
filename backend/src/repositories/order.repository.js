@@ -257,3 +257,105 @@ export async function obtenerPedidosPorUsuario(usuarioId) {
     pedidos,
   };
 }
+
+
+
+export async function obtenerDetallePedido(pedidoId, usuarioId) {
+  const [filas] = await db.query(
+    `
+      SELECT
+        p.id AS pedido_id,
+        p.usuario_id,
+        p.restaurante_id,
+        r.nombre AS restaurante_nombre,
+        p.direccion_entrega,
+        p.estado_pedido,
+        p.total_pedido,
+        p.fecha_pedido,
+
+        dp.id AS detalle_id,
+        dp.producto_id,
+        pr.nombre AS producto_nombre,
+        dp.cantidad,
+        dp.precio_unitario,
+        dp.subtotal,
+
+        e.distancia_km,
+        e.co2_ahorrado_kg,
+
+        env.cantidad_envases_biodegradables,
+        env.plasticos_evitados_unidades
+
+      FROM pedidos p
+
+      INNER JOIN restaurantes r
+        ON r.id = p.restaurante_id
+
+      LEFT JOIN detalle_pedidos dp
+        ON dp.pedido_id = p.id
+
+      LEFT JOIN productos pr
+        ON pr.id = dp.producto_id
+
+      LEFT JOIN entregas e
+        ON e.pedido_id = p.id
+
+      LEFT JOIN envases env
+        ON env.pedido_id = p.id
+
+      WHERE p.id = ?
+        AND p.usuario_id = ?
+
+      ORDER BY dp.id ASC
+    `,
+    [pedidoId, usuarioId]
+  );
+
+  if (filas.length === 0) {
+    return null;
+  }
+
+  const primeraFila = filas[0];
+
+  return {
+    pedido: {
+      id: Number(primeraFila.pedido_id),
+      restaurante_id: Number(primeraFila.restaurante_id),
+      restaurante_nombre: primeraFila.restaurante_nombre,
+      direccion_entrega: primeraFila.direccion_entrega,
+      estado_pedido: primeraFila.estado_pedido,
+      total_pedido: Number(primeraFila.total_pedido),
+      fecha_pedido: primeraFila.fecha_pedido,
+    },
+
+    productos: filas
+      .filter((fila) => fila.detalle_id !== null)
+      .map((fila) => ({
+        producto_id: Number(fila.producto_id),
+        nombre: fila.producto_nombre,
+        cantidad: Number(fila.cantidad),
+        precio_unitario: Number(fila.precio_unitario),
+        subtotal: Number(fila.subtotal),
+      })),
+
+    impacto_ambiental: {
+      co2_ahorrado_kg:
+        primeraFila.co2_ahorrado_kg == null
+          ? 0
+          : Number(primeraFila.co2_ahorrado_kg),
+
+      distancia_km:
+        primeraFila.distancia_km == null
+          ? null
+          : Number(primeraFila.distancia_km),
+
+      cantidad_envases_biodegradables: Number(
+        primeraFila.cantidad_envases_biodegradables ?? 0
+      ),
+
+      plasticos_evitados_unidades: Number(
+        primeraFila.plasticos_evitados_unidades ?? 0
+      ),
+    },
+  };
+}

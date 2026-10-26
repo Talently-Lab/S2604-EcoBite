@@ -1,5 +1,6 @@
 
 import { crearPedidoService } from "../services/order.service.js";
+import { obtenerDetallePedido } from "../repositories/order.repository.js";
 
 export async function createOrderController(req, res) {
   try {
@@ -46,6 +47,38 @@ export async function createOrderController(req, res) {
       message: status === 400
         ? error.message
         : "Error al crear el pedido",
+    });
+  }
+}
+
+
+export async function getOrderDetailController(req, res) {
+  const pedidoId = Number(req.params.id);
+
+  if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+    return res.status(400).json({
+      message: "ID de pedido inválido",
+    });
+  }
+
+  try {
+    const pedido = await obtenerDetallePedido(
+      pedidoId,
+      req.user.id
+    );
+
+    if (!pedido) {
+      return res.status(404).json({
+        message: "Pedido no encontrado",
+      });
+    }
+
+    return res.status(200).json(pedido);
+  } catch (error) {
+    console.error("Error al consultar el detalle del pedido:", error);
+
+    return res.status(500).json({
+      message: "No se pudo obtener el detalle del pedido",
     });
   }
 }
