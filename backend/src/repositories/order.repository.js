@@ -13,14 +13,23 @@ export async function crearPedido({
   try {
     await connection.beginTransaction();
 
-    // comprobar productos y obtenet sus precios reales.
-    const ids = [...new Set(productos.map(p => p.producto_id))];
+  
+    const ids = [...new Set(productos.map((p) => p.producto_id))];
     const placeholders = ids.map(() => "?").join(",");
 
     const [productosDB] = await connection.query(
-      `SELECT id, restaurante_id, nombre, precio, activo
-       FROM productos
-       WHERE id IN (${placeholders})
+      `SELECT
+         p.id,
+         p.restaurante_id,
+         p.nombre,
+         p.precio,
+         p.activo,
+         p.tipo_envase_id,
+         te.nombre AS tipo_envase
+       FROM productos p
+       INNER JOIN tipos_envase te
+         ON te.id = p.tipo_envase_id
+       WHERE p.id IN (${placeholders})
        FOR UPDATE`,
       ids
     );
@@ -30,12 +39,12 @@ export async function crearPedido({
     }
 
     const productosMap = new Map(
-      productosDB.map(p => [Number(p.id), p])
+      productosDB.map((p) => [Number(p.id), p])
     );
 
     let total = 0;
-    let cantidadTotal = 0;
     const detalles = [];
+    const envasesPorTipo = new Map();
 
     for (const item of productos) {
       const producto = productosMap.get(item.producto_id);
@@ -50,14 +59,17 @@ export async function crearPedido({
       }
 
       if (!producto.activo) {
-        throw new Error(`El producto ${producto.nombre} no está disponible`);
+        throw new Error(
+          `El producto ${producto.nombre} no está disponible`
+        );
       }
 
       const precio = Number(producto.precio);
-      const subtotal = Number((precio * item.cantidad).toFixed(2));
+      const subtotal = Number(
+        (precio * item.cantidad).toFixed(2)
+      );
 
       total += subtotal;
-      cantidadTotal += item.cantidad;
 
       detalles.push({
         producto_id: producto.id,
@@ -65,10 +77,33 @@ export async function crearPedido({
         precio_unitario: precio,
         subtotal,
       });
+
+      const tipoEnvaseId = Number(producto.tipo_envase_id);
+
+      if (!envasesPorTipo.has(tipoEnvaseId)) {
+        envasesPorTipo.set(tipoEnvaseId, {
+          tipo_envase_id: tipoEnvaseId,
+          tipo_envase: producto.tipo_envase,
+          cantidad_envases: 0,
+          plasticos_evitados_unidades: 0,
+        });
+      }
+
+      const envase = envasesPorTipo.get(tipoEnvaseId);
+
+      
+      envase.cantidad_envases += item.cantidad;
+      envase.plasticos_evitados_unidades += item.cantidad;
     }
 
     total = Number(total.toFixed(2));
 
+    const cantidadTotal = [...envasesPorTipo.values()].reduce(
+      (suma, envase) => suma + envase.cantidad_envases,
+      0
+    );
+
+   
     const [pedidoResult] = await connection.query(
       `INSERT INTO pedidos
        (usuario_id, restaurante_id, direccion_entrega,
@@ -79,6 +114,7 @@ export async function crearPedido({
 
     const pedidoId = pedidoResult.insertId;
 
+  
     for (const detalle of detalles) {
       await connection.query(
         `INSERT INTO detalle_pedidos
@@ -93,6 +129,7 @@ export async function crearPedido({
         ]
       );
     }
+
 
     await connection.query(
       `INSERT INTO entregas
@@ -113,13 +150,20 @@ export async function crearPedido({
     );
 
 
-    await connection.query(
-      `INSERT INTO envases
-       (pedido_id, tipo_envase, cantidad_envases_biodegradables,
-        plasticos_evitados_unidades)
-       VALUES (?, ?, ?, ?)`,
-      [pedidoId, "biodegradable", cantidadTotal, cantidadTotal]
-    );
+    for (const envase of envasesPorTipo.values()) {
+      await connection.query(
+        `INSERT INTO envases
+         (pedido_id, tipo_envase_id, cantidad_envases,
+          plasticos_evitados_unidades)
+         VALUES (?, ?, ?, ?)`,
+        [
+          pedidoId,
+          envase.tipo_envase_id,
+          envase.cantidad_envases,
+          envase.plasticos_evitados_unidades,
+        ]
+      );
+    }
 
     await connection.commit();
 
@@ -131,7 +175,8 @@ export async function crearPedido({
       total_pedido: total,
       productos: detalles,
       entrega: impactoCO2,
-      cantidad_envases_biodegradables: cantidadTotal,
+      envases: [...envasesPorTipo.values()],
+      cantidad_total_envases: cantidadTotal,
       plasticos_evitados_unidades: cantidadTotal,
     };
   } catch (error) {
@@ -142,31 +187,27 @@ export async function crearPedido({
   }
 }
 
-
-
 export async function obtenerPedidosPorUsuario(usuarioId) {
+  // 1. Obtener pedidos, productos y entregas.
   const [filas] = await db.query(
     `SELECT
-        p.id AS pedido_id,
-        p.restaurante_id,
-        r.nombre AS restaurante_nombre,
-        p.direccion_entrega,
-        p.estado_pedido,
-        p.total_pedido,
-        p.fecha_pedido,
+       p.id AS pedido_id,
+       p.restaurante_id,
+       r.nombre AS restaurante_nombre,
+       p.direccion_entrega,
+       p.estado_pedido,
+       p.total_pedido,
+       p.fecha_pedido,
 
-        dp.id AS detalle_id,
-        dp.producto_id,
-        pr.nombre AS producto_nombre,
-        dp.cantidad,
-        dp.precio_unitario,
-        dp.subtotal,
+       dp.id AS detalle_id,
+       dp.producto_id,
+       pr.nombre AS producto_nombre,
+       dp.cantidad,
+       dp.precio_unitario,
+       dp.subtotal,
 
-        e.distancia_km,
-        e.co2_ahorrado_kg,
-
-        env.cantidad_envases_biodegradables,
-        env.plasticos_evitados_unidades
+       e.distancia_km,
+       e.co2_ahorrado_kg
 
      FROM pedidos p
      INNER JOIN restaurantes r
@@ -177,15 +218,12 @@ export async function obtenerPedidosPorUsuario(usuarioId) {
        ON pr.id = dp.producto_id
      LEFT JOIN entregas e
        ON e.pedido_id = p.id
-     LEFT JOIN envases env
-       ON env.pedido_id = p.id
 
      WHERE p.usuario_id = ?
      ORDER BY p.fecha_pedido DESC, p.id DESC, dp.id ASC`,
     [usuarioId]
   );
 
-  // Agrupar las filas: un pedido puede tener varios productos.
   const pedidosMap = new Map();
 
   for (const fila of filas) {
@@ -198,23 +236,20 @@ export async function obtenerPedidosPorUsuario(usuarioId) {
         estado_pedido: fila.estado_pedido,
         total_pedido: Number(fila.total_pedido),
         fecha_pedido: fila.fecha_pedido,
-
         entrega: {
-          distancia_km: fila.distancia_km == null
-            ? null
-            : Number(fila.distancia_km),
-          co2_ahorrado_kg: fila.co2_ahorrado_kg == null
-            ? 0
-            : Number(fila.co2_ahorrado_kg),
+          distancia_km:
+            fila.distancia_km == null
+              ? null
+              : Number(fila.distancia_km),
+          co2_ahorrado_kg:
+            fila.co2_ahorrado_kg == null
+              ? 0
+              : Number(fila.co2_ahorrado_kg),
         },
-
-        cantidad_envases_biodegradables:
-          Number(fila.cantidad_envases_biodegradables ?? 0),
-
-        plasticos_evitados_unidades:
-          Number(fila.plasticos_evitados_unidades ?? 0),
-
         productos: [],
+        envases: [],
+        cantidad_total_envases: 0,
+        plasticos_evitados_unidades: 0,
       });
     }
 
@@ -231,6 +266,52 @@ export async function obtenerPedidosPorUsuario(usuarioId) {
 
   const pedidos = Array.from(pedidosMap.values());
 
+  // 2. Consultar envases por separado para no duplicar productos.
+  if (pedidos.length > 0) {
+    const pedidoIds = pedidos.map((pedido) => pedido.id);
+    const placeholders = pedidoIds.map(() => "?").join(",");
+
+    const [filasEnvases] = await db.query(
+      `SELECT
+         env.pedido_id,
+         env.tipo_envase_id,
+         te.nombre AS tipo_envase,
+         env.cantidad_envases,
+         env.plasticos_evitados_unidades
+       FROM envases env
+       INNER JOIN tipos_envase te
+         ON te.id = env.tipo_envase_id
+       WHERE env.pedido_id IN (${placeholders})
+       ORDER BY env.pedido_id, env.tipo_envase_id`,
+      pedidoIds
+    );
+
+    const pedidosPorId = new Map(
+      pedidos.map((pedido) => [Number(pedido.id), pedido])
+    );
+
+    for (const fila of filasEnvases) {
+      const pedido = pedidosPorId.get(Number(fila.pedido_id));
+
+      if (!pedido) continue;
+
+      const envase = {
+        tipo_envase_id: Number(fila.tipo_envase_id),
+        tipo_envase: fila.tipo_envase,
+        cantidad_envases: Number(fila.cantidad_envases),
+        plasticos_evitados_unidades: Number(
+          fila.plasticos_evitados_unidades ?? 0
+        ),
+      };
+
+      pedido.envases.push(envase);
+      pedido.cantidad_total_envases += envase.cantidad_envases;
+      pedido.plasticos_evitados_unidades +=
+        envase.plasticos_evitados_unidades;
+    }
+  }
+
+  // 3. Calcular impacto acumulado.
   const impactoTotal = pedidos.reduce(
     (total, pedido) => ({
       co2_ahorrado_kg:
@@ -258,56 +339,43 @@ export async function obtenerPedidosPorUsuario(usuarioId) {
   };
 }
 
-
-
 export async function obtenerDetallePedido(pedidoId, usuarioId) {
+  // 1. Consultar el pedido, sus productos y su entrega.
+  // No se unen envases aquí para evitar duplicar las líneas de productos.
   const [filas] = await db.query(
-    `
-      SELECT
-        p.id AS pedido_id,
-        p.usuario_id,
-        p.restaurante_id,
-        r.nombre AS restaurante_nombre,
-        p.direccion_entrega,
-        p.estado_pedido,
-        p.total_pedido,
-        p.fecha_pedido,
+    `SELECT
+       p.id AS pedido_id,
+       p.usuario_id,
+       p.restaurante_id,
+       r.nombre AS restaurante_nombre,
+       p.direccion_entrega,
+       p.estado_pedido,
+       p.total_pedido,
+       p.fecha_pedido,
 
-        dp.id AS detalle_id,
-        dp.producto_id,
-        pr.nombre AS producto_nombre,
-        dp.cantidad,
-        dp.precio_unitario,
-        dp.subtotal,
+       dp.id AS detalle_id,
+       dp.producto_id,
+       pr.nombre AS producto_nombre,
+       dp.cantidad,
+       dp.precio_unitario,
+       dp.subtotal,
 
-        e.distancia_km,
-        e.co2_ahorrado_kg,
+       e.distancia_km,
+       e.co2_ahorrado_kg
 
-        env.cantidad_envases_biodegradables,
-        env.plasticos_evitados_unidades
+     FROM pedidos p
+     INNER JOIN restaurantes r
+       ON r.id = p.restaurante_id
+     LEFT JOIN detalle_pedidos dp
+       ON dp.pedido_id = p.id
+     LEFT JOIN productos pr
+       ON pr.id = dp.producto_id
+     LEFT JOIN entregas e
+       ON e.pedido_id = p.id
 
-      FROM pedidos p
-
-      INNER JOIN restaurantes r
-        ON r.id = p.restaurante_id
-
-      LEFT JOIN detalle_pedidos dp
-        ON dp.pedido_id = p.id
-
-      LEFT JOIN productos pr
-        ON pr.id = dp.producto_id
-
-      LEFT JOIN entregas e
-        ON e.pedido_id = p.id
-
-      LEFT JOIN envases env
-        ON env.pedido_id = p.id
-
-      WHERE p.id = ?
-        AND p.usuario_id = ?
-
-      ORDER BY dp.id ASC
-    `,
+     WHERE p.id = ?
+       AND p.usuario_id = ?
+     ORDER BY dp.id ASC`,
     [pedidoId, usuarioId]
   );
 
@@ -316,6 +384,41 @@ export async function obtenerDetallePedido(pedidoId, usuarioId) {
   }
 
   const primeraFila = filas[0];
+
+  // 2. Consultar todos los envases del pedido.
+  const [filasEnvases] = await db.query(
+    `SELECT
+       env.tipo_envase_id,
+       te.nombre AS tipo_envase,
+       env.cantidad_envases,
+       env.plasticos_evitados_unidades
+     FROM envases env
+     INNER JOIN tipos_envase te
+       ON te.id = env.tipo_envase_id
+     WHERE env.pedido_id = ?
+     ORDER BY env.tipo_envase_id`,
+    [pedidoId]
+  );
+
+  const envases = filasEnvases.map((fila) => ({
+    tipo_envase_id: Number(fila.tipo_envase_id),
+    tipo_envase: fila.tipo_envase,
+    cantidad_envases: Number(fila.cantidad_envases),
+    plasticos_evitados_unidades: Number(
+      fila.plasticos_evitados_unidades ?? 0
+    ),
+  }));
+
+  const cantidadTotalEnvases = envases.reduce(
+    (total, envase) => total + envase.cantidad_envases,
+    0
+  );
+
+  const plasticosEvitados = envases.reduce(
+    (total, envase) =>
+      total + envase.plasticos_evitados_unidades,
+    0
+  );
 
   return {
     pedido: {
@@ -329,7 +432,7 @@ export async function obtenerDetallePedido(pedidoId, usuarioId) {
     },
 
     productos: filas
-      .filter((fila) => fila.detalle_id !== null)
+      .filter((fila) => fila.detalle_id != null)
       .map((fila) => ({
         producto_id: Number(fila.producto_id),
         nombre: fila.producto_nombre,
@@ -349,13 +452,9 @@ export async function obtenerDetallePedido(pedidoId, usuarioId) {
           ? null
           : Number(primeraFila.distancia_km),
 
-      cantidad_envases_biodegradables: Number(
-        primeraFila.cantidad_envases_biodegradables ?? 0
-      ),
-
-      plasticos_evitados_unidades: Number(
-        primeraFila.plasticos_evitados_unidades ?? 0
-      ),
+      envases,
+      cantidad_total_envases: cantidadTotalEnvases,
+      plasticos_evitados_unidades: plasticosEvitados,
     },
   };
 }

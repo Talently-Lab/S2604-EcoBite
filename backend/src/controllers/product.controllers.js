@@ -2,7 +2,11 @@
 import {
   findRestaurantByUserId,
   createProduct,
-  getProductsByRestaurantId
+  getProductsByRestaurantId,
+  getTipoEnvaseById,
+  getTiposEnvase,
+  getCategoriaProductoById,
+  getCategoriasProducto,
 } from "../repositories/product.repository.js";
 
 export async function createProductController(req, res) {
@@ -11,19 +15,20 @@ export async function createProductController(req, res) {
       nombre,
       descripcion,
       precio,
-      imagen_url
+      imagen_url,
+      tipo_envase_id,
+      categoria_producto_id,
     } = req.body;
 
-    // Validaciones
     if (typeof nombre !== "string" || !nombre.trim()) {
       return res.status(400).json({
-        message: "El nombre del plato es obligatorio"
+        message: "El nombre del plato es obligatorio",
       });
     }
 
     if (nombre.trim().length > 150) {
       return res.status(400).json({
-        message: "El nombre no puede superar los 150 caracteres"
+        message: "El nombre no puede superar los 150 caracteres",
       });
     }
 
@@ -35,7 +40,28 @@ export async function createProductController(req, res) {
       Number(precio) <= 0
     ) {
       return res.status(400).json({
-        message: "El precio debe ser un número mayor que cero"
+        message: "El precio debe ser un número mayor que cero",
+      });
+    }
+
+    if (
+      !Number.isInteger(Number(tipo_envase_id)) ||
+      Number(tipo_envase_id) <= 0
+    ) {
+      return res.status(400).json({
+        message: "Debés seleccionar un tipo de envase válido",
+      });
+    }
+
+    if (
+      categoria_producto_id === undefined ||
+      categoria_producto_id === null ||
+      categoria_producto_id === "" ||
+      !Number.isInteger(Number(categoria_producto_id)) ||
+      Number(categoria_producto_id) <= 0
+    ) {
+      return res.status(400).json({
+        message: "Debés seleccionar una categoría válida",
       });
     }
 
@@ -45,7 +71,7 @@ export async function createProductController(req, res) {
       typeof descripcion !== "string"
     ) {
       return res.status(400).json({
-        message: "La descripción debe ser un texto"
+        message: "La descripción debe ser un texto",
       });
     }
 
@@ -54,6 +80,12 @@ export async function createProductController(req, res) {
       imagen_url !== null &&
       imagen_url !== ""
     ) {
+      if (typeof imagen_url !== "string") {
+        return res.status(400).json({
+          message: "La URL de la imagen no es válida",
+        });
+      }
+
       try {
         const url = new URL(imagen_url);
 
@@ -62,40 +94,59 @@ export async function createProductController(req, res) {
         }
       } catch {
         return res.status(400).json({
-          message: "La URL de la imagen no es válida"
+          message: "La URL de la imagen no es válida",
         });
       }
     }
 
-    const restaurant = await findRestaurantByUserId(
-      req.user.id
+    const tipoEnvase = await getTipoEnvaseById(
+      Number(tipo_envase_id)
     );
 
-    if (!restaurant) {
-      return res.status(404).json({
-        message: "No se encontró un restaurante activo asociado a tu cuenta"
+    if (!tipoEnvase) {
+      return res.status(400).json({
+        message: "El tipo de envase seleccionado no existe",
       });
     }
 
+    const categoria = await getCategoriaProductoById(
+      Number(categoria_producto_id)
+    );
+
+    if (!categoria) {
+      return res.status(400).json({
+        message: "La categoría seleccionada no existe",
+      });
+    }
+
+    const restaurant = await findRestaurantByUserId(req.user.id);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        message:
+          "No se encontró un restaurante activo asociado a tu cuenta",
+      });
+    }
 
     const product = await createProduct({
       restaurante_id: restaurant.id,
       nombre: nombre.trim(),
       descripcion: descripcion?.trim() || null,
       precio: Number(precio),
-      imagen_url: imagen_url || null
+      imagen_url: imagen_url || null,
+      tipo_envase_id: Number(tipo_envase_id),
+      categoria_producto_id: Number(categoria_producto_id),
     });
 
     return res.status(201).json({
       message: "Plato creado correctamente",
-      producto: product
+      producto: product,
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("Error al crear el plato:", error);
 
     return res.status(500).json({
-      message: "Error al crear el plato"
+      message: "Error al crear el plato",
     });
   }
 }
@@ -106,7 +157,7 @@ export async function getRestaurantProductsController(req, res) {
 
     if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
       return res.status(400).json({
-        message: "ID de restaurante inválido"
+        message: "ID de restaurante inválido",
       });
     }
 
@@ -117,7 +168,35 @@ export async function getRestaurantProductsController(req, res) {
     console.error("Error al obtener los productos:", error);
 
     return res.status(500).json({
-      message: "Error al obtener los productos del restaurante"
+      message: "Error al obtener los productos del restaurante",
+    });
+  }
+}
+
+export async function getTiposEnvaseController(req, res) {
+  try {
+    const tipos = await getTiposEnvase();
+
+    return res.status(200).json(tipos);
+  } catch (error) {
+    console.error("Error al obtener los tipos de envase:", error);
+
+    return res.status(500).json({
+      message: "Error al obtener los tipos de envase",
+    });
+  }
+}
+
+export async function getCategoriasProductoController(req, res) {
+  try {
+    const categorias = await getCategoriasProducto();
+
+    return res.status(200).json(categorias);
+  } catch (error) {
+    console.error("Error al obtener las categorías:", error);
+
+    return res.status(500).json({
+      message: "Error al obtener las categorías de productos",
     });
   }
 }
