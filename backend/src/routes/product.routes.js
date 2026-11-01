@@ -9,6 +9,8 @@ import {
   getRestaurantProductsController,
   getTiposEnvaseController,
   getCategoriasProductoController,
+  updateProductController,
+  toggleProductStatusController
 } from "../controllers/product.controllers.js";
 
 const router = Router();
@@ -35,6 +37,21 @@ router.post(
 router.get(
   "/restaurant/:id",
   getRestaurantProductsController
+);
+
+
+router.patch(
+  "/:id",
+  requireAuth,
+  requireRestaurant,
+  updateProductController
+);
+
+router.patch(
+  "/:id/status",
+  requireAuth,
+  requireRestaurant,
+  toggleProductStatusController
 );
 
 export default router;
