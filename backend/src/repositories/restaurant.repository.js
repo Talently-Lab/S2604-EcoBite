@@ -42,19 +42,28 @@ export async function getRestaurantById(id){
   return rows[0];
 }
 
+
 export async function getRestaurantMenu(id) {
   const [rows] = await db.query(
     `SELECT
-       id,
-       restaurante_id,
-       nombre,
-       descripcion,
-       precio,
-       imagen_url
-     FROM productos
-     WHERE restaurante_id = ?
-       AND activo = TRUE
-     ORDER BY nombre ASC`,
+       p.id,
+       p.restaurante_id,
+       p.nombre,
+       p.descripcion,
+       p.precio,
+       p.imagen_url,
+       p.tipo_envase_id,
+       te.nombre AS tipo_envase,
+       p.categoria_producto_id,
+       cp.nombre AS categoria
+     FROM productos p
+     INNER JOIN tipos_envase te
+       ON te.id = p.tipo_envase_id
+     INNER JOIN categoria_producto cp
+       ON cp.id = p.categoria_producto_id
+     WHERE p.restaurante_id = ?
+       AND p.activo = TRUE
+     ORDER BY p.nombre ASC`,
     [id]
   );
 
