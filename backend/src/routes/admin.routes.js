@@ -17,9 +17,9 @@ router.use(requireAuth, requireAdmin);
 // Listar todos los restaurantes
 router.get("/restaurants", getAllRestaurantsController);
 
-// Desactivar un restaurante
+// Cambiar el estado de un restaurante
 router.patch(
-  "/restaurants/:id/deactivate",
+  "/restaurants/:id/changeStatus",
     updateRestaurantStatusController
 );
 
