@@ -39,11 +39,27 @@ export async function createRestaurant({
 }
 //obtener todos los restaurantes activos y sus horarios 
 export async function getRestaurants() {
-  // 1. Obtener restaurantes activos
+  // 1. Obtener restaurantes activos y calcular el CO2 total ahorrado
   const [restaurants] = await db.query(
-    `SELECT *
-     FROM restaurantes
-     WHERE activo = 1`
+    `SELECT
+     r.*,
+     COALESCE(
+       SUM(
+         CASE
+           WHEN p.estado_pedido = 'entregado'
+           THEN e.co2_ahorrado_kg
+           ELSE 0
+         END
+       ), 0
+     ) AS co2_total_ahorrado
+   FROM restaurantes r
+   LEFT JOIN pedidos p
+     ON p.restaurante_id = r.id
+   LEFT JOIN entregas e
+     ON e.pedido_id = p.id
+   WHERE r.activo = 1
+   GROUP BY r.id
+   ORDER BY r.id DESC`
   );
 
   // Si no hay restaurantes, devolvemos un array vacío
@@ -100,8 +116,9 @@ export async function getRestaurants() {
     });
 
     return {
-      ...restaurant,
-      horarios: horariosCompletos,
+        ...restaurant,
+        co2_total_ahorrado: Number(restaurant.co2_total_ahorrado),
+        horarios: horariosCompletos,
     };
   });
 }
