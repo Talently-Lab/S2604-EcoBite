@@ -143,7 +143,39 @@ export async function getProductsByRestaurantId(restauranteId) {
 
   return products;
 }
+// Listar todos los productos de un restaurante (activos y desactivados)
+export async function getAllProductsByRestaurantId(restauranteId) {
+  const [products] = await db.query(
+    `SELECT
+       p.id,
+       p.restaurante_id,
+       p.nombre,
+       p.descripcion,
+       p.precio,
+       p.imagen_url,
+       p.tipo_envase_id,
+       te.nombre AS tipo_envase,
+       p.categoria_producto_id,
+       cp.nombre AS categoria,
+       p.activo,
+       p.created_at,
+       p.updated_at
+     FROM productos p
+     INNER JOIN tipos_envase te
+       ON te.id = p.tipo_envase_id
+     INNER JOIN categoria_producto cp
+       ON cp.id = p.categoria_producto_id
+     WHERE p.restaurante_id = ?
+     ORDER BY p.id DESC`,
+    [restauranteId]
+  );
 
+  return products.map((product) => ({
+    ...product,
+    precio: Number(product.precio),
+    activo: Boolean(product.activo),
+  }));
+}
 
 // Actualizar producto de un restaurante
 export async function updateProduct({

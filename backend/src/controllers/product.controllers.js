@@ -3,6 +3,7 @@ import {
   findRestaurantByUserId,
   createProduct,
   getProductsByRestaurantId,
+  getAllProductsByRestaurantId,
   getTipoEnvaseById,
   getTiposEnvase,
   getCategoriaProductoById,
@@ -174,7 +175,32 @@ export async function getRestaurantProductsController(req, res) {
     });
   }
 }
+// Obtener todos los productos del restaurante autenticado incluyendo activos y desactivados
+export async function getMyProductsController(req, res) {
+  try {
+    const restaurant = await findRestaurantByUserId(req.user.id);
 
+    if (!restaurant) {
+      return res.status(404).json({
+        message: "No se encontró un restaurante activo asociado a tu cuenta",
+      });
+    }
+
+    const products = await getAllProductsByRestaurantId(restaurant.id);
+
+    return res.status(200).json({
+      total: products.length,
+      productos: products,
+    });
+
+  } catch (error) {
+    console.error("Error al obtener los productos del restaurante:", error);
+
+    return res.status(500).json({
+      message: "Error al obtener los productos del restaurante",
+    });
+  }
+}
 export async function getTiposEnvaseController(req, res) {
   try {
     const tipos = await getTiposEnvase();

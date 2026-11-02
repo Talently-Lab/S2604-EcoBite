@@ -1,6 +1,7 @@
 
 import { crearPedidoService } from "../services/order.service.js";
-import { obtenerDetallePedido } from "../repositories/order.repository.js";
+import { obtenerDetallePedido, actualizarEstadoPedido, obtenerPedidosPorRestaurante } from "../repositories/order.repository.js";
+import { getRestaurantByUserId } from "../repositories/restaurant.repository.js";
 
 export async function createOrderController(req, res) {
   try {
@@ -79,6 +80,89 @@ export async function getOrderDetailController(req, res) {
 
     return res.status(500).json({
       message: "No se pudo obtener el detalle del pedido",
+    });
+  }
+}
+
+export async function updateOrderStatusController(req, res) {
+  try {
+    const pedidoId = Number(req.params.id);
+    const { estado_pedido } = req.body;
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        message: "ID de pedido inválido",
+      });
+    }
+
+    const estadosValidos = [
+      "pendiente",
+      "en preparacion",
+      "listo",
+      "entregado",
+      "cancelado",
+    ];
+
+    if (!estadosValidos.includes(estado_pedido)) {
+      return res.status(400).json({
+        message: "Estado de pedido inválido",
+      });
+    }
+
+    const restaurante = await getRestaurantByUserId(req.user.id);
+
+    if (!restaurante) {
+      return res.status(404).json({
+        message: "Restaurante no encontrado",
+      });
+    }
+
+    const resultado = await actualizarEstadoPedido({
+      pedidoId,
+      restauranteId: restaurante.id,
+      nuevoEstado: estado_pedido,
+    });
+
+    if (resultado.notFound) {
+      return res.status(404).json({
+        message: "Pedido no encontrado en tu restaurante",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Estado del pedido actualizado correctamente",
+      pedido: resultado.pedido,
+    });
+  } catch (error) {
+    console.error("Error al actualizar el estado del pedido:", error);
+
+    return res.status(500).json({
+      message: "Error al actualizar el estado del pedido",
+    });
+  }
+}
+
+export async function getRestaurantOrdersController(req, res) {
+  try {
+    const restaurante = await getRestaurantByUserId(req.user.id);
+
+    if (!restaurante) {
+      return res.status(404).json({
+        message: "Restaurante no encontrado",
+      });
+    }
+
+    const pedidos = await obtenerPedidosPorRestaurante(restaurante.id);
+
+    return res.status(200).json({
+      total: pedidos.length,
+      pedidos,
+    });
+  } catch (error) {
+    console.error("Error al obtener los pedidos del restaurante:", error);
+
+    return res.status(500).json({
+      message: "No se pudieron obtener los pedidos",
     });
   }
 }

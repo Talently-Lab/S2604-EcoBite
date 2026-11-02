@@ -458,3 +458,134 @@ export async function obtenerDetallePedido(pedidoId, usuarioId) {
     },
   };
 }
+
+
+
+export async function actualizarEstadoPedido({
+  pedidoId,
+  restauranteId,
+  nuevoEstado,
+}) {
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // comprobar que el pedido pertenece al restaurante.
+    const [rows] = await connection.query(
+      `SELECT id
+       FROM pedidos
+       WHERE id = ?
+         AND restaurante_id = ?
+       FOR UPDATE`,
+      [pedidoId, restauranteId]
+    );
+
+    if (rows.length === 0) {
+      await connection.rollback();
+      return { notFound: true };
+    }
+
+    await connection.query(
+      `UPDATE pedidos
+       SET estado_pedido = ?
+       WHERE id = ?
+         AND restaurante_id = ?`,
+      [nuevoEstado, pedidoId, restauranteId]
+    );
+
+    await connection.commit();
+
+    return {
+      pedido: {
+        id: Number(pedidoId),
+        estado_pedido: nuevoEstado,
+      },
+    };
+
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+
+  } finally {
+    connection.release();
+  }
+}
+
+export async function obtenerPedidosPorRestaurante(restauranteId) {
+  const [filas] = await db.query(
+    `SELECT
+       p.id AS pedido_id,
+       p.usuario_id,
+       u.nombre AS cliente_nombre,
+       p.restaurante_id,
+       p.direccion_entrega,
+       p.estado_pedido,
+       p.total_pedido,
+       p.fecha_pedido,
+
+       dp.id AS detalle_id,
+       dp.producto_id,
+       pr.nombre AS producto_nombre,
+       dp.cantidad,
+       dp.precio_unitario,
+       dp.subtotal,
+
+       e.distancia_km,
+       e.co2_ahorrado_kg
+
+     FROM pedidos p
+     INNER JOIN users u
+       ON u.id = p.usuario_id
+     LEFT JOIN detalle_pedidos dp
+       ON dp.pedido_id = p.id
+     LEFT JOIN productos pr
+       ON pr.id = dp.producto_id
+     LEFT JOIN entregas e
+       ON e.pedido_id = p.id
+
+     WHERE p.restaurante_id = ?
+     ORDER BY p.fecha_pedido DESC, p.id DESC, dp.id ASC`,
+    [restauranteId]
+  );
+
+  const pedidosMap = new Map();
+
+  for (const fila of filas) {
+    if (!pedidosMap.has(fila.pedido_id)) {
+      pedidosMap.set(fila.pedido_id, {
+        id: Number(fila.pedido_id),
+        usuario_id: Number(fila.usuario_id),
+        cliente_nombre: fila.cliente_nombre,
+        restaurante_id: Number(fila.restaurante_id),
+        direccion_entrega: fila.direccion_entrega,
+        estado_pedido: fila.estado_pedido,
+        total_pedido: Number(fila.total_pedido),
+        fecha_pedido: fila.fecha_pedido,
+        entrega: {
+          distancia_km:
+            fila.distancia_km == null
+              ? null
+              : Number(fila.distancia_km),
+          co2_ahorrado_kg:
+            fila.co2_ahorrado_kg == null
+              ? 0
+              : Number(fila.co2_ahorrado_kg),
+        },
+        productos: [],
+      });
+    }
+
+    if (fila.detalle_id != null) {
+      pedidosMap.get(fila.pedido_id).productos.push({
+        producto_id: Number(fila.producto_id),
+        nombre: fila.producto_nombre,
+        cantidad: Number(fila.cantidad),
+        precio_unitario: Number(fila.precio_unitario),
+        subtotal: Number(fila.subtotal),
+      });
+    }
+  }
+
+  return Array.from(pedidosMap.values());
+}
