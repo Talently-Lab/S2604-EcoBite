@@ -133,16 +133,37 @@ export async function getRestaurantById(id) {
 }
 
 // Obtener el restaurante asociado al usuario autenticado
+// Obtener el restaurante asociado al usuario autenticado y su CO2 ahorrado
 export async function getRestaurantByUserId(userId) {
   const [rows] = await db.query(
-    `SELECT *
-     FROM restaurantes
-     WHERE usuario_id = ?
-       AND activo = TRUE`,
+    `SELECT
+      r.*,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN p.estado_pedido = 'entregado'
+            THEN e.co2_ahorrado_kg
+            ELSE 0
+          END
+        ), 0
+      ) AS co2_total_ahorrado
+    FROM restaurantes r
+    LEFT JOIN pedidos p
+      ON p.restaurante_id = r.id
+    LEFT JOIN entregas e
+      ON e.pedido_id = p.id
+    WHERE r.usuario_id = ?
+      AND r.activo = TRUE
+    GROUP BY r.id`,
     [userId]
   );
 
-  return rows[0] ?? null;
+  if (!rows[0]) return null;
+
+  return {
+    ...rows[0],
+    co2_total_ahorrado: Number(rows[0].co2_total_ahorrado),
+  };
 }
 // obtener el menu 
 export async function getRestaurantMenu(id) {

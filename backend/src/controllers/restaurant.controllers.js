@@ -11,6 +11,29 @@ export async function listRestaurantsHandler(req, res) {
     })
   }
 }
+// Obtener los datos del restaurante autenticado
+export async function getMyRestaurantController(req, res) {
+  try {
+    const restaurant = await getRestaurantByUserId(req.user.id);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        message: "No se encontró un restaurante asociado a tu cuenta",
+      });
+    }
+
+    return res.status(200).json({
+      restaurante: restaurant,
+    });
+
+  } catch (error) {
+    console.error("Error al obtener el restaurante:", error);
+
+    return res.status(500).json({
+      message: "Error al obtener los datos del restaurante",
+    });
+  }
+}
 
 export async function getRestaurantDetails(req, res) {
   try {
