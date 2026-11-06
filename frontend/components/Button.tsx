@@ -6,7 +6,7 @@ interface buttonProps{
 }
 
 const focus = "focus-visible:outline-none focus-visible:shadow-focus";
-const btn = `inline-flex h-12  px-5 items-center justify-center whitespace-nowrap rounded-md border-2 text-button transition-all duration-300 disabled:cursor-not-allowed disabled:shadow-none ${focus}`;
+const btn = `inline-flex h-12 max-md:h-10  px-5 items-center justify-center whitespace-nowrap rounded-md border-2 text-button transition-all duration-300 disabled:cursor-not-allowed disabled:shadow-none ${focus}`;
 
 export function ButtonPrincipal(prop:buttonProps){
     return(

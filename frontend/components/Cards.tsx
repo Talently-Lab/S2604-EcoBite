@@ -44,12 +44,12 @@ function Card({ id, urlImagen, nombre, apertura, cierre, metaDatos }: cardProps)
                 <div className="pl-0.5">
                     <h4 className="font-display text-title-3 text-ink">{nombre}</h4>
                     <p className="text-sm text-ink-2">
-                        {estaAbierto ? metaDatos.cocina : `Abre a las ${apertura}`}
+                        {estaAbierto ? `cierra a las ${cierre}` : `Abre a las ${apertura}`}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                     {ComponentSustentabilidad && <ComponentSustentabilidad />}
-                    <p className="text-sm pl-0.5 text-ink-2">★ {metaDatos.puntuacion} · {"25-23 min"}</p>
+                    <p className="text-sm pl-0.5 text-ink-2">★ {metaDatos.puntuacion} </p>
                     <CO2ahorrado ahorrado={metaDatos.BadgesAhorro}/>
                 </div>
             </div>

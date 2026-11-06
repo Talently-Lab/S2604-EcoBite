@@ -5,7 +5,6 @@ export async function getRestaurants() {
     if (!respuesta.ok) throw new Error('ocurrio un Error al traer los restaurante');
     const resJson = await respuesta.json()
     const datoLimpios: cardProps[] = resJson.map(transformRestaurantData)
-    console.log(datoLimpios)
     return datoLimpios;
 } //el error falta definir con el backend
 

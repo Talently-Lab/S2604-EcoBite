@@ -1,10 +1,9 @@
 "use client"
 import {useEffect, useState} from "react";
-
 import { useFetchRestaurantes } from "@/contexts/restaurantsContext";
-import Card from "./Cards";
 import { ButtonPrincipal } from "./Button";
-import { ecoFriendly } from "./Badges";
+import Card from "./Cards";
+import CardSkeleton from "./restaurantCardSkeleton";
 
 interface ListaRestauranteProps {
     filtrarPor?:any[];
@@ -85,13 +84,19 @@ export default function ListaRestaurante({ filtrarPor, ordenarPor,functionActiva
         if (paginaActual > 1) setPaginaActual(prev => prev - 1);
     };
 
-    if (loading) return <div className="w-full min-h-[70vh] flex items-center justify-center cursor-wait"><h2 className="text-title-1 text-ink animate-pulse">Cargando restaurantes...</h2></div>;
+    if (loading) return (
+        <div className="flex flex-col items-center md:grid md:grid-cols-4 md:grid-rows-2 gap-5.5 w-full">
+            {Array.from({ length: 8 }).map((_, i) => (
+                    <CardSkeleton key={i} />
+            ))}
+        </div>    
+    );
 
     return (
         <>
             {restaurantesOrdenados.length !== 0 ? (
                 <>
-                    <div className="grid grid-cols-4 grid-rows-2 gap-5.5 w-full">
+                    <div className="flex flex-col items-center md:grid md:grid-cols-4 md:grid-rows-2 gap-5.5 w-full">
                         {localesVisibles.map((item) => (
                         <Card key={item.id} id={item.id} urlImagen={item.urlImagen} nombre={item.nombre} dia={item.dia} apertura={item.apertura} cierre={item.cierre}
                         metaDatos={{
@@ -105,7 +110,7 @@ export default function ListaRestaurante({ filtrarPor, ordenarPor,functionActiva
 
                     </div>
                     {totalPaginas > 1 && (
-                        <div className="flex items-center gap-4 mt-4">
+                        <div className="hidden md:flex items-center gap-4 mt-4">
                             <button
                                 onClick={paginaAnterior}
                                 disabled={paginaActual === 1}
@@ -129,8 +134,8 @@ export default function ListaRestaurante({ filtrarPor, ordenarPor,functionActiva
                 </>
             ) : (
                 <div className="flex flex-col items-center justify-center w-full min-h-[70vh] gap-4">
-                    <h2 className="text text-title-2">No se encontraron locales con esos filtros</h2>
-                    <p>probá quitando algunos filtros</p>
+                    <h2 className="text text-title-2 max-md:text-[18px] text-center">No se encontraron locales con esos filtros</h2>
+                    <p className="text-label text-ink-3 max-md:text-[14px]">probá quitando algunos filtros</p>
                     <ButtonPrincipal id="eliminarFiltros" text="Limpiar filtros" tamano="w-37" functionActivate={functionActivate}/>
                 </div>
             )}

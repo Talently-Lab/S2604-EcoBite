@@ -28,17 +28,35 @@ export default function Explorar(){
     };
     
     return(
-        <div className="flex flex-col gap-4 items-center px-20 w-full">
-            <div className="flex flex-col w-full py-7 space-y-2">
-                <div className="flex text-body">
+        <div className="flex flex-col gap-4 items-center px-20 w-full max-md:px-5">
+            <div className="flex flex-col w-full py-7 md:space-y-2 ">
+                <div className="hidden md:flex text-body">
                     <a href="/" className="hover:text-eco-700" >Inicio</a><p>/</p><a href="/explorar" className="hover:text-eco-700">Explorar</a>
                 </div>
-                <h1 className="text-title-1 font-display">Restaurantes eco-friendly</h1>
+                <h1 className="text-title-1 max-md:text-[26px] max-md:whitespace-nowrap font-display">Restaurantes eco-friendly</h1>
+            </div>
+
+            <div className="md:hidden flex">
+                {/* filtrado y ordenador mobile */}
+                <div>
+                    <button className="w-[40%] h-full">
+
+                    </button>
+                </div>
+                <div className="relative">
+                        <select name="ordenador" id="ordenador" onChange={(e) => setOrdenarPor(e.target.value)} className="w-full h-full appearance-none text-body-small font-sans font-bold py-3.5 px-6 rounded-sm text-center border-3 border-ink">
+                            <option value="" disabled selected>Ordenar</option>
+                            <option value="nombre" className="text-ink">Nombre</option>
+                            <option value="abierto" className="text-ink">Abierto</option>
+                            <option value="puntuacion" className="text-ink">Mejor Puntuación</option>
+                        </select>
+                </div>
+
             </div>
             
             <div className="flex w-full justify-start gap-10">
 
-                <form className="flex flex-col border border-line rounded-sm w-55 h-fit p-5" onSubmit={aplicarFiltros}>
+                <form className="hidden md:flex flex-col border border-line rounded-sm w-55 h-fit p-5" onSubmit={aplicarFiltros}>
                     <h2 className="text-title-3">Filtros</h2>
                     <div className="flex flex-col">
                         {/* <!-- CATEGORÍA 1: Checkboxes (Multi-selección) --> */}
@@ -157,7 +175,7 @@ export default function Explorar(){
 
                 </form>
                 <div className="w-full h-full flex flex-col items-center justify-center gap-5.5">
-                    <div className="border-line bg-eco-700 flex justify-between w-full px-5 py-3 rounded-md text-white ">
+                    <div className="border-line bg-eco-700 hidden md:flex justify-between w-full px-5 py-3 rounded-md text-white ">
                         <h3>24 locales</h3>
                         <label htmlFor="ordenador">
                             Ordenar:
@@ -166,8 +184,7 @@ export default function Explorar(){
                                 <option value="abierto" className="text-ink">Abierto</option>
                                 <option value="puntuacion" className="text-ink">Mejor Puntuación</option>
                             </select>
-                        </label>
-                        
+                        </label> 
                     </div>
                     <RestaurantProvider>
                         <ListaRestaurante filtrarPor={FiltrarPor} ordenarPor={OrdenarPor} functionActivate={() => setFiltrarPor([])} />
