@@ -18,6 +18,10 @@ import {
 
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import {
+  getAuthCookieOptions,
+  getRegistrationCookieOptions
+} from "../config/cookies.js";
 
 export function googleAuth(req, res) {
   const url = getGoogleAuthURL();
@@ -46,12 +50,7 @@ export async function googleCallback(req, res) {
     if (user) {
       const token = generateToken(user);
 
-      res.cookie("access_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 3600000
-      });
+      res.cookie("access_token", token, getAuthCookieOptions());
 
       return res.redirect(
         `${process.env.FRONTEND_URL}/`
@@ -62,12 +61,11 @@ export async function googleCallback(req, res) {
     const registrationToken =
       generateRegistrationToken(googleUser);
 
-    res.cookie("registration_token", registrationToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 1200000
-    });
+    res.cookie(
+      "registration_token",
+      registrationToken,
+      getRegistrationCookieOptions()
+    );
 
     return res.redirect(
       `${process.env.FRONTEND_URL}/crear-cuenta`
@@ -206,19 +204,10 @@ export async function completeRegistration(req, res) {
     const token = generateToken(user);
 
 
-    res.clearCookie("registration_token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict"
-    });
+    res.clearCookie("registration_token", getRegistrationCookieOptions());
 
 
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 3600000
-    });
+    res.cookie("access_token", token, getAuthCookieOptions());
 
 
     return res.status(201).json({
@@ -305,12 +294,7 @@ export async function register(req, res) {
 
     const token = generateToken(user);
 
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 3600000
-    });
+    res.cookie("access_token", token, getAuthCookieOptions());
 
     return res.status(201).json({
       message: "Cuenta creada correctamente"
@@ -355,12 +339,7 @@ export async function login(req, res) {
 
     const token = generateToken(user);
 
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 3600000
-    });
+    res.cookie("access_token", token, getAuthCookieOptions());
 
     return res.json({
       message: "Login exitoso"
@@ -376,11 +355,7 @@ export async function login(req, res) {
 }
 
 export function logout(req, res) {
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict"
-  });
+  res.clearCookie("access_token", getAuthCookieOptions());
 
   res.json({
     message: "Logout successful"
