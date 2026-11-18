@@ -125,12 +125,8 @@ export async function getRestaurants() {
 //obtener el restaurante por id
 export async function getRestaurantById(id) {
   const [rows] = await db.query(
-<<<<<<< HEAD
-    ` select r.id, r.nombre, r.urlImagen, r.cocina, r.badgesSustentabilidad, r.badgesAhorro, r.tipoEnvase, r.puntuacion, h.dias,h.apertura,h.cierre from restaurantes r inner join horariorestaurante h on r.id = h.id_restaurante`
-=======
     `SELECT * FROM restaurantes WHERE id = ?`,
     [id]
->>>>>>> 3d0fd70afce6ab1bb351a32a0bb0b8ffcd6ff58a
   );
 
   return rows[0];
