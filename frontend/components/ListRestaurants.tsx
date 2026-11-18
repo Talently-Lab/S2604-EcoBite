@@ -136,7 +136,7 @@ export default function ListaRestaurante({ filtrarPor, ordenarPor,functionActiva
                 <div className="flex flex-col items-center justify-center w-full min-h-[70vh] gap-4">
                     <h2 className="text text-title-2 max-md:text-[18px] text-center">No se encontraron locales con esos filtros</h2>
                     <p className="text-label text-ink-3 max-md:text-[14px]">probá quitando algunos filtros</p>
-                    <ButtonPrincipal id="eliminarFiltros" text="Limpiar filtros" tamano="w-37" functionActivate={functionActivate}/>
+                    <ButtonPrincipal id="eliminarFiltros" text="Limpiar filtros" disabled={loading} tamano="w-37" functionActivate={functionActivate}/>
                 </div>
             )}
         </>
