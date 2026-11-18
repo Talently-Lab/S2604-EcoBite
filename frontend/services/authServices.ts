@@ -1,56 +1,57 @@
-import {user} from "@/types/user"
-import { error } from "console"
+import type { user } from "@/types/user"
 
-export async function userRegister({nombre,email,contrasena,rol}:user){
-    const datos = {
-        "nombre":nombre,
-        "email":email,
-        "password":contrasena,
-        "rol":rol
-    }
-    try{
-        const respuesta = await fetch(`${process.env.NEXT_PUBLIC_SERVIDOR_BACKEND}/register`,{
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify(datos),
-        })
+const API_URL = process.env.NEXT_PUBLIC_SERVIDOR_BACKEND
 
-        if (!respuesta.ok){
-            return{"success":false,error:"error en el servidor"}
-        }
+export type ApiResult =
+    | { success: true }
+    | { success: false; error: string }
 
-        return { "success": true}
-    }
-    catch(error){
-        return {"success": false, "error":"error de red"}
-    }
-}
+type RegisterData = Pick<user, "nombre" | "email" | "contrasena" | "rol">
+type LoginData = { email: string; contrasena: string }
 
-export async function userLogin({ email, contrasena }: { email: string, contrasena: string }) {
-    const datos = {
-        "email": email,
-        "password": contrasena,
+async function postAuth(
+    endpoint: string,
+    datos: Record<string, unknown>,
+    errorPorDefecto: string,
+    credentials: RequestCredentials = "same-origin"
+): Promise<ApiResult> {
+    if (!API_URL) {
+        return { success: false, error: "Falta configurar la URL del servidor" }
     }
 
     try {
-        const respuesta = await fetch(`${process.env.NEXT_PUBLIC_SERVIDOR_BACKEND}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const respuesta = await fetch(`${API_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos),
-            // MANDATORIO: Para que Express te pueda setear la cookie HTTP-Only en el navegador
-            credentials: 'include' 
+            credentials,
         })
-        
-        const resJson = await respuesta.json()
 
-        // Evaluamos 'respuesta.ok' (status 200-299), no 'resJson.ok'
+        const resJson = await respuesta.json().catch(() => null)
+
         if (!respuesta.ok) {
-            return { "success": false, "error": resJson.message || "Email o contraseña incorrectos" }
+            return { success: false, error: resJson?.message ?? errorPorDefecto }
         }
 
-        return { "success": true }
+        return { success: true }
+    } catch {
+        return { success: false, error: "Error de conexión con el servidor" }
     }
-    catch (error) {
-        return { "success": false, "error": "Error de conexión con el servidor" }
-    }
+}
+
+export function userRegister({ nombre, email, contrasena, rol }: RegisterData) {
+    return postAuth(
+        "/register",
+        { nombre, email, password: contrasena, rol },
+        "No pudimos crear la cuenta"
+    )
+}
+
+export function userLogin({ email, contrasena }: LoginData) {
+    return postAuth(
+        "/login",
+        { email, password: contrasena },
+        "Email o contraseña incorrectos",
+        "include"
+    )
 }
