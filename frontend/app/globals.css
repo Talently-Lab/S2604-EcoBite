@@ -1,40 +1,54 @@
 @import "tailwindcss";
 
-/* Fuentes: bloque inline porque referencian variables de next/font */
+/* Fonts: inline block because they reference next/font variables */
 @theme inline {
   --font-display: var(--font-bricolage), "DM Sans", sans-serif;
   --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @theme {
-  /* ===== Colores: principal ===== */
+  /* ===== Colors: primary ===== */
   --color-eco-700: #1F6B3D;
   --color-eco-800: #185730;
   --color-eco-900: #12441F;
   --color-eco-100: #E6F2EA;
   --color-eco-200: #D2E8DA;
 
-  /* ===== Colores: secundarios (identidad actual) ===== */
+  /* ===== Colors: secondary (current identity) ===== */
   --color-olive-700: #6B6742;
   --color-olive-800: #5A5636;
   --color-olive-tan: #CEAD89;
   --color-olive-cream: #F4EFE3;
 
-  /* ===== Texto ===== */
+  /* ===== Landing (design palette + logo) ===== */
+  --color-forest: #174033;       /* logo wordmark */
+  --color-forest-2: #2D6A4F;
+  --color-leaf: #4CB959;         /* logo accent */
+  --color-mint: #9BD5AD;
+  --color-mint-pale: #E6F4ED;
+  --color-sage: #F0F4ED;
+  --color-cream: #FAF9F6;
+  --color-terracotta: #C2502F;   /* CTA; 4.7:1 against white */
+  --color-terracotta-700: #A6411F;
+  --color-terracotta-soft: #FBE7DF;
+  --color-amber: #F4A261;
+  --color-amber-soft: #FFF0DF;
+
+  /* ===== Text ===== */
   --color-ink: #1B241F;
   --color-ink-2: #4F5C54;
   --color-ink-3: #6A776F;
   --color-placeholder: #6A776F;
   --color-disabled: #8A958E;
 
-  /* ===== Superficies y bordes ===== */
+  /* ===== Surfaces and borders ===== */
   --color-canvas: #F7F9F6;
   --color-surface: #FFFFFF;
   --color-surface-alt: #EEF2EF;
-  --color-line: #7C8A82;        /* borde de campos */
-  --color-line-soft: #D5DDD8;   /* borde suave */
+  --color-line: #7C8A82;        /* input border */
+  --color-line-soft: #D5DDD8;   /* soft border */
 
-  /* ===== Estado ===== */
+  /* ===== Status ===== */
   --color-danger: #B3261E;
   --color-danger-hover: #8F1D17;
   --color-danger-active: #6F1511;
@@ -42,7 +56,7 @@
   --color-warn-fg: #7A4A00;
   --color-warn-bg: #FFF1D6;
 
-  /* ===== Sustentabilidad ===== */
+  /* ===== Sustainability ===== */
   --color-eco-fg: #14532D;
   --color-eco-bg: #DDF1E3;
   --color-teal-fg: #0B5B57;
@@ -51,19 +65,19 @@
   --color-co2-bg: #DCEFF4;
 
 
-  /* ===== Radios ===== */
+  /* ===== Radii ===== */
   --radius-sm: 6px;      /* chips */
-  --radius-md: 10px;     /* botones, inputs */
-  --radius-lg: 16px;     /* tarjetas */
+  --radius-md: 10px;     /* buttons, inputs */
+  --radius-lg: 16px;     /* cards */
   --radius-pill: 999px;  /* badges, pills */
 
-  /* ===== Sombras y foco ===== */
+  /* ===== Shadows and focus ===== */
   --shadow-sm: 0 1px 2px rgba(27, 36, 31, 0.08);
   --shadow-md: 0 6px 16px rgba(27, 36, 31, 0.12);
-  --shadow-focus: 0 0 0 2px #FFFFFF, 0 0 0 5px #1F6B3D;          /* botones */
+  --shadow-focus: 0 0 0 2px #FFFFFF, 0 0 0 5px #1F6B3D;          /* buttons */
   --shadow-focus-input: 0 0 0 3px rgba(31, 107, 61, 0.25);        /* inputs */
 
-  /* ===== Tipografía ===== */
+  /* ===== Typography ===== */
   --text-display: 40px;
   --text-display--line-height: 48px;
   --text-display--font-weight: 700;
@@ -105,7 +119,7 @@
   --text-footer--font-weight: 600;
 }
 
-/* En móvil los títulos bajan un paso (según la guía) */
+/* On mobile, headings step down one size (per the style guide) */
 @media (max-width: 640px) {
   :root {
     --text-display: 32px;
@@ -118,6 +132,14 @@
 @layer base {
   html {
     background: var(--color-canvas);
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px; /* sticky header height */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {
