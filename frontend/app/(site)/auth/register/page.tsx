@@ -2,6 +2,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { InputEco, InputEmail, InputPassword } from "@/components/Inputs"
 import { ButtonPrincipal } from "@/components/Button"
 import { userRegister } from "@/services/authServices"
@@ -49,8 +50,8 @@ export default function Register() {
 
     return (
         <div className="flex w-full h-[calc(100dvh-235.2px)]">
-            <div className="w-1/2">
-                <img src="/img/images.jpg" alt="" className="w-full h-full object-cover" />
+            <div className="relative w-1/2">
+                <Image src="/img/images.jpg" alt="" fill sizes="50vw" className="object-cover" />
             </div>
             <form onSubmit={enviarForm} className="flex flex-col items-center justify-center w-1/2 border-l-2 h-full">
                 <div className="flex flex-col gap-3.5 items-start w-[70%]">

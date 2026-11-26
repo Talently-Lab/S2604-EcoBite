@@ -2,6 +2,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { ButtonPrincipal } from "@/components/Button"
 import { InputEmail, InputPassword } from "@/components/Inputs"
 import { userLogin } from "@/services/authServices"
@@ -68,8 +69,8 @@ export default function Login() {
                     </div>
                 </div>
             </form>
-            <div className="w-1/2">
-                <img src="/img/images.jpg" alt="" className="w-full h-full object-cover" />
+            <div className="relative w-1/2">
+                <Image src="/img/images.jpg" alt="" fill sizes="50vw" className="object-cover" />
             </div>
         </div>
     )

@@ -1,12 +1,13 @@
 "use client"
 import {RestaurantProvider} from "@/contexts/restaurantsContext";
 import ListaRestaurante from "@/components/ListRestaurants";
+import Link from "next/link";
 import { useState, type SubmitEvent, type ChangeEvent } from "react";
-import { ButtonPrincipal, ButtonSecundario, ButtonTexto } from "@/components/Button";
+import { ButtonPrincipal, ButtonTexto } from "@/components/Button";
 
 export default function Explorar(){
     const [OrdenarPor, setOrdenarPor] = useState("nombre"); // Valor por defecto para ordenar
-    const [FiltrarPor, setFiltrarPor] = useState<any[]>([]);
+    const [FiltrarPor, setFiltrarPor] = useState<string[]>([]);
 
     function aplicarFiltros(e:SubmitEvent){
         e.preventDefault()
@@ -31,7 +32,7 @@ export default function Explorar(){
         <div className="flex flex-col gap-4 items-center px-20 w-full max-md:px-5">
             <div className="flex flex-col w-full py-7 md:space-y-2 ">
                 <div className="hidden md:flex text-body">
-                    <a href="/" className="hover:text-eco-700" >Inicio</a><p>/</p><a href="/explorar" className="hover:text-eco-700">Explorar</a>
+                    <Link href="/" className="hover:text-eco-700">Inicio</Link><p>/</p><Link href="/explorar" className="hover:text-eco-700">Explorar</Link>
                 </div>
                 <h1 className="text-title-1 max-md:text-[26px] max-md:whitespace-nowrap font-display">Restaurantes eco-friendly</h1>
             </div>
