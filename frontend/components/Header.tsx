@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 
 function Headers(){
-    const [usuarioActivo,setUsuarioActivo] = useState(false);
+    const [usuarioActivo] = useState(false);
     const [isMenuOpen,setIsMenuOpen] = useState(false);
     const router = useRouter();
 

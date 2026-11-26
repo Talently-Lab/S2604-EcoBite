@@ -7,7 +7,7 @@ const btn = `font-sans text-footer rounded-pill inline-flex items-center pl-2 pr
 
 export function EstadoPendiente({id}:badgesProps){
     return(
-        <span className={`${btn} bg-warn-bg text-warn-fg`} >
+        <span id={id} className={`${btn} bg-warn-bg text-warn-fg`} >
             Pendiente
         </span>
     )
@@ -15,7 +15,7 @@ export function EstadoPendiente({id}:badgesProps){
 
 export function EntadoEnPreparacion({id}:badgesProps){
     return(
-        <span className={`${btn} bg-co2-bg text-co2-fg`}>
+        <span id={id} className={`${btn} bg-co2-bg text-co2-fg`}>
             En preparación
         </span>
     )
@@ -23,7 +23,7 @@ export function EntadoEnPreparacion({id}:badgesProps){
 
 export function EstadoListo({id}:badgesProps){
     return(
-        <span className={`${btn} bg-teal-bg text-teal-fg`}>
+        <span id={id} className={`${btn} bg-teal-bg text-teal-fg`}>
             Listo
         </span>
     )
@@ -31,7 +31,7 @@ export function EstadoListo({id}:badgesProps){
 
 export function EstadoEntregado({id}:badgesProps){
     return (
-        <span className={`${btn} bg-eco-700 text-white`}>
+        <span id={id} className={`${btn} bg-eco-700 text-white`}>
             Entregado
         </span>
     )
@@ -39,7 +39,7 @@ export function EstadoEntregado({id}:badgesProps){
 
 export function EstadoCancelado({id}:badgesProps){
     return(
-        <span className={`${btn} bg-danger-bg text-danger`}>
+        <span id={id} className={`${btn} bg-danger-bg text-danger`}>
             Cancelado
         </span>
     )

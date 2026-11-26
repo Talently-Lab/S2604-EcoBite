@@ -2,7 +2,7 @@ interface buttonProps{
     id:string,
     text: string,
     tamano: string,
-    disabled:boolean
+    disabled?: boolean
     functionActivate: () => void
 }
 

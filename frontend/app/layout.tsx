@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import "./globals.css";
-import Footer from "@/components/Footer";
-import Headers from "@/components/Header";
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
@@ -15,8 +13,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "EcoBite",
-  description: "Plataforma de restaurantes sustentables",
+  title: "EcoBite · Comé rico. Elegí mejor.",
+  description:
+    "Pedí en restaurantes de tu barrio con envases compostables y entregas de bajas emisiones. Zona piloto: Belgrano, Palermo y Recoleta.",
 };
 
 export default function RootLayout({
@@ -30,12 +29,7 @@ export default function RootLayout({
       className={`${bricolage.variable} ${dmSans.variable} antialiased`}
     >
       <body className="min-h-screen bg-canvas flex flex-col">
-        <Headers/>
-        <main className="grow">
-          {children}
-        </main>
-
-        <Footer />
+        {children}
       </body>
     </html>
   );

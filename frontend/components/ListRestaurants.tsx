@@ -1,74 +1,81 @@
 "use client"
-import {useEffect, useState} from "react";
+import { useState } from "react";
 import { useFetchRestaurantes } from "@/contexts/restaurantsContext";
+import type { cardProps } from "@/types/restaurant";
 import { ButtonPrincipal } from "./Button";
 import Card from "./Cards";
 import CardSkeleton from "./restaurantCardSkeleton";
 
 interface ListaRestauranteProps {
-    filtrarPor?:any[];
+    filtrarPor?: string[];
     ordenarPor?: string;
     functionActivate: ()=>void;
 }
 
+// Returns whether a restaurant is open right now.
+function comprobarSiEstaAbierto(aperturaStr: string, cierreStr: string): boolean {
+    const ahora = new Date();
+    const ahoraMinutos = (ahora.getHours() * 60) + ahora.getMinutes();
+
+    const [hApertura, mApertura] = aperturaStr.split(':').map(Number);
+    const [hCierre, mCierre] = cierreStr.split(':').map(Number);
+
+    const apertura = hApertura * 60 + mApertura;
+    const cierre = hCierre * 60 + mCierre;
+
+    // Overnight schedules that go past 00:00
+    if (cierre < apertura) {
+        return ahoraMinutos >= apertura || ahoraMinutos <= cierre;
+    }
+
+    return ahoraMinutos >= apertura && ahoraMinutos <= cierre;
+}
+
+// Sorts and filters the restaurant list (pure: derived during render, no effect needed).
+function ordenarYFiltrar(restaurants: cardProps[], ordenarPor?: string, filtrarPor?: string[]): cardProps[] {
+    let resultado = [...restaurants];
+
+    if (ordenarPor === "nombre") {
+        resultado.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }
+    else if (ordenarPor === "abierto") {
+        resultado.sort((a, b) => {
+            const esAbiertoA = comprobarSiEstaAbierto(a.apertura, a.cierre) ? 1 : 0;
+            const esAbiertoB = comprobarSiEstaAbierto(b.apertura, b.cierre) ? 1 : 0;
+            return esAbiertoB - esAbiertoA;
+        });
+    }
+    else if (ordenarPor === "puntuacion") {
+        resultado.sort((a, b) => b.metaDatos.puntuacion - a.metaDatos.puntuacion);
+    }
+
+    if (filtrarPor?.includes("eco")) {
+        resultado = resultado.filter(item => item.metaDatos.BadgesSustentabilidad === "ecoFriendly");
+    } else if (filtrarPor?.length && !filtrarPor.includes("todos")) {
+        resultado = resultado.filter(item =>
+            filtrarPor.includes(item.metaDatos.cocina) ||
+            filtrarPor.includes(item.metaDatos.tipoEnvase));
+    }
+
+    return resultado;
+}
+
 export default function ListaRestaurante({ filtrarPor, ordenarPor,functionActivate }: ListaRestauranteProps) {
     const {restaurants,loading} = useFetchRestaurantes();
-    const [restaurantesOrdenados, setRestaurantesOrdenados] = useState<any[]>([]);
     const [paginaActual, setPaginaActual] = useState(1);
 
-    // 1. Función que solo se encarga de saber si un restaurante está abierto AHORA
-    function comprobarSiEstaAbierto(aperturaStr: string, cierreStr: string): boolean {
-        const ahora = new Date();
-        const ahoraMinutos = (ahora.getHours() * 60) + ahora.getMinutes();
-
-        const [hApertura, mApertura] = aperturaStr.split(':').map(Number);
-        const [hCierre, mCierre] = cierreStr.split(':').map(Number);
-
-        const apertura = hApertura * 60 + mApertura;
-        let cierre = hCierre * 60 + mCierre;
-
-        // Manejo de horarios nocturnos que pasan de las 00:00hs
-        if (cierre < apertura) {
-            return ahoraMinutos >= apertura || ahoraMinutos <= cierre;
-        }
-
-        return ahoraMinutos >= apertura && ahoraMinutos <= cierre;
-    }
-
-    useEffect(() => {
+    // Go back to page 1 whenever the inputs change (adjusting state during render, not in an effect).
+    const [entradasPrevias, setEntradasPrevias] = useState({ restaurants, ordenarPor, filtrarPor });
+    if (
+        entradasPrevias.restaurants !== restaurants ||
+        entradasPrevias.ordenarPor !== ordenarPor ||
+        entradasPrevias.filtrarPor !== filtrarPor
+    ) {
+        setEntradasPrevias({ restaurants, ordenarPor, filtrarPor });
         setPaginaActual(1);
-        // Si no hay restaurantes cargados aún, salimos temprano
-        if (!restaurants || restaurants.length === 0) return;
-
-        let resultado = [...restaurants];
-
-        if (ordenarPor === "nombre") {
-            resultado.sort((a, b) => a.nombre.localeCompare(b.nombre));
-        }
-        else if (ordenarPor === "abierto") {
-            resultado.sort((a, b) => {
-                const esAbiertoA = comprobarSiEstaAbierto(a.apertura, a.cierre) ? 1 : 0;
-                const esAbiertoB = comprobarSiEstaAbierto(b.apertura, b.cierre) ? 1 : 0;
-                return esAbiertoB - esAbiertoA;
-            });
-        }
-        else if (ordenarPor === "puntuacion") {
-            resultado.sort((a, b) => b.metaDatos.puntuacion - a.metaDatos.puntuacion);
-        }
-
-        
-        if (filtrarPor?.includes("eco")) {
-            resultado = resultado.filter( item => item.metaDatos.BadgesSustentabilidad === "ecoFriendly");
-        } else if (filtrarPor?.length && !filtrarPor.includes("todos")) {
-        resultado = resultado.filter(item =>
-            filtrarPor?.includes(item.metaDatos.cocina) ||
-            filtrarPor?.includes(item.metaDatos.tipoEnvase));
     }
-        
-        // 4. Guardamos la lista ordenada en el estado
-        setRestaurantesOrdenados(resultado);
 
-    }, [ordenarPor,filtrarPor, restaurants]);
+    const restaurantesOrdenados = ordenarYFiltrar(restaurants ?? [], ordenarPor, filtrarPor);
 
     const indiceUltimoElemento = paginaActual * 8;
     const indicePrimerElemento = indiceUltimoElemento - 8;

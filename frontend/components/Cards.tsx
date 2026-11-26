@@ -1,7 +1,8 @@
 import { envaseBiodegradable,entregaSinEmisiones,CO2ahorrado,ecoFriendly} from "./Badges";
+import type { ComponentType } from "react";
 import { cardProps } from "@/types/restaurant";
 
-const sustentabilidadBadges: Record<string, React.ComponentType<any>> = {
+const sustentabilidadBadges: Record<string, ComponentType> = {
     "biodegradable": envaseBiodegradable,
     "sinEmisiones":entregaSinEmisiones,
     "ecoFriendly":ecoFriendly,
