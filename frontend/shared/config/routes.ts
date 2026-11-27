@@ -3,8 +3,8 @@
  */
 export const routes = {
   home: "/",
-  explore: "/explorar",
-  restaurantPortal: "/portalRestaurante",
+  explore: "/explore",
+  restaurantPortal: "/restaurant-portal",
   login: "/login",
   register: "/register",
 } as const;

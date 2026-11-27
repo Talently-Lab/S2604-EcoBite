@@ -5,7 +5,7 @@ import type { FormEvent, ReactNode } from "react";
 type AuthFormProps = {
   /** Slot: the fields and actions rendered inside the form. */
   children: ReactNode;
-  /** Optional submit handler. Defaults to a no-op while the forms are mock-ups. */
+  /** Submit handler; the default browser submit is always prevented. */
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 };
 
