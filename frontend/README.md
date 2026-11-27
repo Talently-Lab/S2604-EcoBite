@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EcoBite · Frontend
 
-## Getting Started
+## Tecnologías
 
-First, run the development server:
+| Tecnología                                   | Versión | Uso                                                              |
+| -------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| [Next.js](https://nextjs.org) (App Router)   | 16.3    | Framework, ruteo y build                                         |
+| [React](https://react.dev)                   | 19.2    | Interfaz de usuario                                              |
+| [TypeScript](https://www.typescriptlang.org) | 5       | Tipado estático (modo `strict`)                                  |
+| [Tailwind CSS](https://tailwindcss.com)      | 4       | Estilos, con los tokens de diseño definidos en `app/globals.css` |
+| [Motion](https://motion.dev)                 | 14      | Animaciones y transiciones entre páginas                         |
+| [ESLint](https://eslint.org)                 | 9       | Linter (`eslint-config-next`)                                    |
+| `next/font`                                  | —       | Tipografías Bricolage Grotesque y DM Sans                        |
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Arquitectura
+
+El frontend es un **monolito modular**: el código se agrupa por **dominio de negocio**, no por tipo de archivo ni por página.
+
+```
+app/            Solo rutas de Next.js. Cada page.tsx / layout.tsx re-exporta desde un módulo.
+modules/        Un módulo por dominio de negocio.
+  auth/         Login, registro y usuario actual.
+  restaurant/   Exploración de restaurantes y portal del restaurante.
+  orders/       Pedidos.
+  landing/      Página de inicio.
+shared/         Código reutilizable entre módulos.
+  config/       Rutas de la app (routes.ts) y variables de entorno (env.ts).
+  layout/       Header, footer y layout del sitio.
+  ui/           Componentes de UI genéricos (botones, inputs, logo, íconos).
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Cada módulo sigue la misma estructura interna (solo las carpetas que necesite):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+modules/<dominio>/
+  components/   Componentes propios del módulo.
+  context/      Contextos de React.
+  lib/          Lógica pura y helpers.
+  pages/        Componentes de página que usan las rutas de app/.
+  services/     Llamadas al backend y mapeo de sus respuestas.
+  types.ts      Tipos del dominio.
+  index.ts      API pública del módulo.
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Las reglas que hay que respetar están en [docs/architecture-rules.md](docs/architecture-rules.md).
 
-## Learn More
+## Gestor de paquetes
 
-To learn more about Next.js, take a look at the following resources:
+El proyecto usa **[pnpm](https://pnpm.io)**. Si no lo tienes, sigue las instrucciones que provee la página oficial.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm install              # instalar dependencias
+cp .env.example .env      # configurar NEXT_PUBLIC_API_URL con la URL del backend
+pnpm dev                  # servidor de desarrollo en http://localhost:3000
+pnpm build                # build de producción
+pnpm start                # servir el build de producción
+pnpm lint                 # correr ESLint
+```
